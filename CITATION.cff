@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+title: "pic-geo: Polymer Industry Cluster county footprints and ZIP-to-county crosswalk"
+message: >-
+  If you use these definitions or this crosswalk, please cite this repository and the version
+  you used. County footprints are organizational decisions that can change, and the crosswalk
+  is built on the 2020 decennial ZCTA vintage, so a figure quoted without a version is not
+  reproducible. Cite the U.S. Census Bureau 2020 ZCTA-to-county relationship file as the
+  upstream source of the ZIP assignments.
+type: software
+authors:
+  - name: "Polymer Industry Cluster, Greater Akron Chamber"
+    city: Akron
+    region: Ohio
+    country: US
+    website: "https://picinnovation.org"
+repository-code: "https://github.com/polymerindustrycluster/pic-geo"
+abstract: >-
+  The two Northeast Ohio county footprints the Polymer Industry Cluster measures against —
+  PIC-12, used for federal-data analyses, and NEO-14, used for company-vault analyses — as
+  code, with their FIPS codes, the ten counties they share, and the six that belong to only
+  one of them. Ships an authoritative ZIP-to-county crosswalk for the PIC-12 footprint, 261
+  ZCTAs and 614 observed city names, derived from the U.S. Census Bureau 2020
+  ZCTA-to-county relationship file. It replaces a city list derived from facility-filed
+  county names, which put out-of-region Ohio towns inside the footprint and contaminated
+  published patent and award counts. Known limits, including the 18 ZCTAs with genuine
+  in-footprint land that the largest-land-piece rule assigns elsewhere, are documented in
+  the module docstrings and README; changes to published values are logged in CORRECTIONS.md.
+keywords:
+  - county footprint
+  - FIPS codes
+  - ZCTA
+  - ZIP code crosswalk
+  - Northeast Ohio
+  - regional economics
+  - polymers
+  - reproducible research
+license:
+  - MIT
+  - CC-BY-4.0
+license-url: "https://github.com/polymerindustrycluster/pic-geo/blob/main/README.md#license"

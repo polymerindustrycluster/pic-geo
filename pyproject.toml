@@ -1,0 +1,68 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pic-geo"
+version = "1.0.0"
+description = "The county footprints and ZIP-to-county crosswalk the Polymer Industry Cluster measures against"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE", "LICENSE-CC-BY-4.0"]
+authors = [
+  { name = "Polymer Industry Cluster, Greater Akron Chamber" },
+]
+keywords = [
+  "county footprint",
+  "FIPS",
+  "ZCTA",
+  "ZIP code crosswalk",
+  "Northeast Ohio",
+  "regional economics",
+  "polymers",
+]
+# No "License ::" classifier: it duplicates the SPDX expression above, and the two together
+# are rejected by current packaging metadata rules. No "Typing :: Typed" either — there is no
+# py.typed marker here, and claiming one that does not exist is worse than claiming nothing.
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: GIS",
+  "Topic :: Sociology",
+]
+
+# No runtime dependencies, and that is a design constraint rather than an accident. This
+# package is imported by every other PIC analysis, so anything it depends on becomes a
+# dependency of all of them. The standard library reads a pipe-delimited file and a JSON file
+# perfectly well.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/polymerindustrycluster/pic-geo"
+Repository = "https://github.com/polymerindustrycluster/pic-geo"
+Issues = "https://github.com/polymerindustrycluster/pic-geo/issues"
+Changelog = "https://github.com/polymerindustrycluster/pic-geo/blob/main/CORRECTIONS.md"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pic_geo"]
+
+# The crosswalk lives at data/pic12_geo.json in the repository, where a reader browsing the
+# tree finds it first, and is installed as package data so an installed copy can load it
+# without knowing anything about the source layout. One file on disk, two ways in.
+[tool.hatch.build.targets.wheel.force-include]
+"data/pic12_geo.json" = "pic_geo/data/pic12_geo.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "data", "tests", "README.md", "CORRECTIONS.md", "CITATION.cff",
+           "LICENSE", "LICENSE-CC-BY-4.0"]
+
+[tool.pytest.ini_options]
+# src layout: tests import the package the way an installed consumer does.
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,12 @@
+# Normalize line endings in the repository to LF.
+#
+# This tree is authored on Windows and tested on ubuntu-latest in CI. Without this, files
+# committed from Windows land with CRLF, and the first contributor on macOS or Linux produces
+# a diff touching every line of every file they open — which buries the actual change and makes
+# `git blame` useless for finding out why a county is assigned the way it is.
+#
+# Working copies keep whatever their platform prefers; only what git stores is normalized.
+* text=auto eol=lf
+
+# The crosswalk is read by humans in diffs. A corrected ZIP should show as one changed line.
+*.json text eol=lf

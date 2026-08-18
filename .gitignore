@@ -1,0 +1,35 @@
+# Exclusion contract for pic-geo. Every rule below has a reason; if you add one, say why.
+
+# The raw Census ZCTA-to-county relationship file, ~6.5 MB, fetched by crosswalk.build().
+# It is public domain and it is not committed on purpose: it is re-fetchable by construction
+# from a URL that is printed in the source, and committing a 6.5 MB blob to a repository whose
+# entire product is a 27 KB derived file inverts the point of the repository. The derived file
+# IS committed, because that one is the product.
+_zcta_county.txt
+*/_zcta_county.txt
+
+# The facility extract that supplies observed city names for a rebuild. Not ours to publish:
+# it is a site-level records dump, and the city half of the crosswalk is shipped derived
+# rather than re-derivable here. See "Rebuilding it" in the README.
+epa.json
+*/epa.json
+
+# The predecessor city list, built from unreliable facility county fields. If a copy ever
+# lands in this tree it must not ship — it is the defect this repository exists to have fixed,
+# and a published copy is an invitation to use it.
+_pic12_cities.json
+
+# Python build and test debris.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Credentials, always. Nothing here needs an API key, and that should stay true.
+.env

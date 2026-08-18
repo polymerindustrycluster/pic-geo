@@ -1,0 +1,48 @@
+# Run the tests on every push and every pull request.
+#
+# The tests ARE the gates here — county counts, the ten-county intersection, every FIPS code
+# re-derived independently, the merge guard, and the crosswalk's internal consistency. There is
+# no render or lint step, because there is nothing to render and a check that cannot fail is
+# worse than no check: it gets cited as evidence.
+#
+# The commands are the same ones a contributor runs locally, and they install from the
+# committed lockfile so CI and a laptop resolve the same versions.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - name: Install from the lockfile
+        run: uv sync --frozen
+      - name: Tests
+        run: uv run pytest
+      # The product of this repository is a data file loaded by path. A clean install that
+      # cannot find it passes every test above and fails at the first real import, so the
+      # packaged wheel is built and imported from outside the source tree on purpose.
+      - name: Clean-install import check
+        run: |
+          uv build
+          uv run --no-project --isolated --with dist/*.whl \
+            python -c "import pic_geo; assert len(pic_geo.PIC12) == 12; \
+                       assert pic_geo.county_of_zip('44685') == 'Summit'; \
+                       print(pic_geo.__version__, len(pic_geo.zips()), 'ZIPs')"
