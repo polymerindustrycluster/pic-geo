@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pic-geo"
-version = "1.0.0"
+version = "1.0.1"
 description = "The county footprints and ZIP-to-county crosswalk the Polymer Industry Cluster measures against"
 readme = "README.md"
 requires-python = ">=3.9"

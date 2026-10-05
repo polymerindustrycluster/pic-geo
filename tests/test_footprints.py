@@ -191,6 +191,22 @@ def test_meta_prose_names_the_actual_difference():
             assert name not in pic_geo.META["pic12"]["differs"]
 
 
+def test_meta_prose_states_both_directions_of_the_difference():
+    """Each footprint's `differs` must name what it lacks AND what it has that the other lacks.
+
+    Until v1.0.1 PIC-12's sentence named only the four counties NEO-14 adds, so a reader who
+    added four to twelve got sixteen under a label that says fourteen. Both sentences must
+    carry the full symmetric difference and the shared count.
+    """
+    both = set(pic_geo.PIC12_ONLY.values()) | set(pic_geo.NEO14_ONLY.values())
+    shared_words = {10: "ten"}[len(pic_geo.SHARED)]
+    for key in pic_geo.FOOTPRINTS:
+        prose = pic_geo.META[key]["differs"]
+        for name in both:
+            assert name in prose, f"{key} differs omits {name}"
+        assert f"share {shared_words} counties" in prose
+
+
 def test_meta_serialization_contract_is_intact():
     """META is embedded verbatim in published datasets. Its field names are frozen."""
     for key in pic_geo.FOOTPRINTS:
