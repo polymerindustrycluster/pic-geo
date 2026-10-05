@@ -14,6 +14,20 @@ Newest first. Report an error by opening an issue — see
 
 ---
 
+## 2026-10-04 — PIC-12's difference sentence named only half the difference, v1.0.1
+
+**Was:** `META["pic12"]["differs"]` read "Excludes Crawford, Huron, Richland and Tuscarawas,
+which the vault's NEO-14 includes." Every word was true, and the sentence was incomplete:
+NEO-14 also leaves out Ashtabula and Trumbull. A reader who added four counties to twelve got
+sixteen, under a label that says fourteen. The evidence-room rendered it ten times on six pages.
+**Is:** both `differs` sentences name the full difference in both directions and say the two
+share ten counties. A new test asserts that.
+**Also:** the two `note`/`differs` strings now use the typographic apostrophe the
+evidence-room's vendored copy already used, so the vendored-copy guard compares equal again;
+it had been failing whenever both checkouts sat side by side, and skipping in CI.
+**Cause:** the existing test checked that each sentence named its own direction of the
+difference, not that it named both.
+
 ## 2026-08-18 — first public release, v1.0.0
 
 The definitions and the crosswalk were already in use internally before this repository
