@@ -14,6 +14,13 @@ Newest first. Report an error by opening an issue — see
 
 ---
 
+## 2026-11-03 — Team NEO-14 added, v1.2.0
+
+Not a correction: an addition. `TEAMNEO14` is the Team NEO half of PIC-18, used as a subtotal
+so a PIC-18 figure can be read against Team NEO's Vibrant Economy Indicators, which report its
+14 counties. It is a different set from the vault's NEO-14. They share twelve counties, and
+the label "Team NEO-14" keeps them apart. No existing footprint changed.
+
 ## 2026-11-03 — PIC-18 added; federal-data work moves to it, v1.1.0
 
 **Was:** two footprints. PIC-12 was the official set for federal-data analyses; NEO-14 was for

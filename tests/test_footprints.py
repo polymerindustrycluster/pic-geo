@@ -222,7 +222,8 @@ def test_meta_serialization_contract_is_intact():
     # already-published output, so it is pinned rather than quietly fixed.
     assert isinstance(pic_geo.META["shared"], list)
     assert pic_geo.META["pic18"]["label"] == "PIC-18"
-    assert set(pic_geo.META) == {"pic12", "neo14", "pic18", "shared"}
+    assert pic_geo.META["teamneo14"]["label"] == "Team NEO-14"
+    assert set(pic_geo.META) == {"pic12", "neo14", "pic18", "teamneo14", "shared"}
 
 
 def test_footprint_accessors_refuse_bad_keys():
@@ -412,6 +413,8 @@ def test_vendored_copy_in_evidence_room_has_not_drifted():
     assert vendored.SHARED == pic_geo.SHARED
     assert vendored.PIC18 == pic_geo.PIC18, "evidence-room's PIC18 has drifted from pic-geo"
     assert vendored.META == pic_geo.META, "evidence-room's META has drifted from pic-geo"
+    if hasattr(vendored, "TEAMNEO14"):
+        assert vendored.TEAMNEO14 == pic_geo.TEAMNEO14, "evidence-room's TEAMNEO14 has drifted"
 
 
 # ---------------------------------------------------------------------------------------
@@ -488,3 +491,30 @@ def test_pic18_city_lookup_refuses_until_rebuilt():
     with pytest.raises(KeyError):
         crosswalk.load_geo("neo14")
 
+
+
+# ---------------------------------------------------------------------------------------
+# Team NEO-14 (v1.2.0): the subtotal that reads against Team NEO's Vibrant Economy Indicators
+# ---------------------------------------------------------------------------------------
+
+
+def test_teamneo14_is_the_team_neo_half_of_pic18():
+    assert set(pic_geo.TEAMNEO14.values()) == TEAM_NEO
+    assert set(pic_geo.TEAMNEO14) < set(pic_geo.PIC18)
+    assert set(pic_geo.PIC18) - set(pic_geo.TEAMNEO14) == {
+        f for f, n in pic_geo.PIC18.items() if n in LAKE_TO_RIVER}
+    assert pic_geo.counties("teamneo14") == pic_geo.TEAMNEO14
+    assert pic_geo.TEAMNEO14_FIPS == frozenset(pic_geo.TEAMNEO14)
+    assert len(pic_geo.TEAMNEO14_FIPS3) == 14
+
+
+def test_teamneo14_is_not_the_vault_neo14():
+    """Same count, different counties: the name collision this footprint's label avoids."""
+    t, n = set(pic_geo.TEAMNEO14.values()), set(pic_geo.NEO14.values())
+    assert t - n == {"Ashland", "Erie"}
+    assert n - t == {"Crawford", "Mahoning"}
+    assert len(t & n) == 12
+    prose = pic_geo.META["teamneo14"]["differs"]
+    for name in ("Ashland", "Erie", "Crawford", "Mahoning", "twelve"):
+        assert name in prose
+    assert pic_geo.META["teamneo14"]["label"] != pic_geo.META["neo14"]["label"]

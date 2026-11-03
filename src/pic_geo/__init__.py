@@ -59,6 +59,13 @@ PIC18 = {
 #: Which JobsOhio network region each PIC-18 county belongs to (the public source of PIC-18).
 JOBSOHIO_REGION = {f: ("Lake to River" if n in ("Ashtabula", "Columbiana", "Mahoning", "Trumbull")
                        else "Team NEO") for f, n in PIC18.items()}
+#: Team NEO's own 14 counties: the JobsOhio regional partner's service area, and the region
+#: of its Vibrant Economy Indicators (neohioeconomy.org, read 2026-11-03). A subset of PIC-18,
+#: carried so a PIC-18 figure can be cut to the region Team NEO publishes against.
+#: NOT the vault's NEO-14 below, which shares the number and twelve of the counties: Team NEO
+#: holds Ashland and Erie, the vault's NEO-14 holds Crawford and Mahoning instead.
+TEAMNEO14 = {f: n for f, n in PIC18.items() if JOBSOHIO_REGION[f] == "Team NEO"}
+
 NEO14 = {
     "39153": "Summit", "39035": "Cuyahoga", "39133": "Portage", "39151": "Stark",
     "39055": "Geauga", "39085": "Lake", "39093": "Lorain", "39103": "Medina",
@@ -109,11 +116,20 @@ META = {
                          "PIC-12, which it contains. Against the vault’s NEO-14 it adds "
                          "Ashland, Ashtabula, Columbiana, Erie and Trumbull and leaves out "
                          "Crawford; the two share thirteen counties."},
+    "teamneo14": {"key": "teamneo14", "n": len(TEAMNEO14), "label": "Team NEO-14",
+                  "counties": sorted(TEAMNEO14.values()),
+                  "note": "Team NEO’s own 14-county region (JobsOhio’s Northeast Ohio partner), "
+                          "the region its Vibrant Economy Indicators report. A subset of "
+                          "PIC-18, used as a subtotal so figures can be read against Team NEO’s.",
+                  "differs": "PIC-18 minus the four Lake to River counties: Ashtabula, "
+                             "Columbiana, Mahoning and Trumbull. Not the vault’s NEO-14: Team "
+                             "NEO-14 holds Ashland and Erie, NEO-14 holds Crawford and "
+                             "Mahoning; the two share twelve counties."},
     "shared": sorted(PIC12[c] for c in SHARED),
 }
 
 #: The two real footprint keys, for safe iteration over META. "shared" is not a footprint.
-FOOTPRINTS = ("pic12", "neo14", "pic18")
+FOOTPRINTS = ("pic12", "neo14", "pic18", "teamneo14")
 
 # Derived shapes. Consuming scripts need county identifiers in several forms — three-digit
 # FIPS for the Census API, upper-case names for EPA extracts, title-case names for IPEDS.
@@ -130,17 +146,22 @@ PIC18_FIPS3 = {f[2:]: n for f, n in PIC18.items()}
 PIC18_NAMES = frozenset(PIC18.values())
 PIC18_NAMES_UPPER = frozenset(n.upper() for n in PIC18.values())
 
+TEAMNEO14_FIPS = frozenset(TEAMNEO14)
+TEAMNEO14_FIPS3 = {f[2:]: n for f, n in TEAMNEO14.items()}
+TEAMNEO14_NAMES = frozenset(TEAMNEO14.values())
+
 NEO14_FIPS = frozenset(NEO14)
 NEO14_FIPS3 = {f[2:]: n for f, n in NEO14.items()}
 NEO14_NAMES = frozenset(NEO14.values())
 NEO14_NAMES_UPPER = frozenset(n.upper() for n in NEO14.values())
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
-    "PIC12", "NEO14", "PIC18", "JOBSOHIO_REGION", "SHARED", "META", "FOOTPRINTS",
+    "PIC12", "NEO14", "PIC18", "TEAMNEO14", "JOBSOHIO_REGION", "SHARED", "META", "FOOTPRINTS",
     "PIC12_ONLY", "NEO14_ONLY", "PIC18_ADDED_TO_PIC12",
     "PIC18_FIPS", "PIC18_FIPS3", "PIC18_NAMES", "PIC18_NAMES_UPPER",
+    "TEAMNEO14_FIPS", "TEAMNEO14_FIPS3", "TEAMNEO14_NAMES",
     "PIC12_FIPS", "PIC12_FIPS3", "PIC12_NAMES", "PIC12_NAMES_UPPER",
     "NEO14_FIPS", "NEO14_FIPS3", "NEO14_NAMES", "NEO14_NAMES_UPPER",
     "counties", "footprint", "in_footprint",
@@ -152,7 +173,7 @@ __all__ = [
 def counties(key="pic12"):
     """Return the {FIPS: county name} mapping for one footprint.
 
-    Takes "pic12", "neo14" or "pic18". Refuses anything else rather than returning an empty dict,
+    Takes "pic12", "neo14", "pic18" or "teamneo14". Refuses anything else rather than returning an empty dict,
     because a silent empty footprint filters every row out and reads downstream as "the
     region has no data" instead of as an error.
     """
@@ -162,6 +183,8 @@ def counties(key="pic12"):
         return dict(NEO14)
     if key == "pic18":
         return dict(PIC18)
+    if key == "teamneo14":
+        return dict(TEAMNEO14)
     raise KeyError(f"unknown footprint {key!r}; expected one of {FOOTPRINTS}")
 
 
