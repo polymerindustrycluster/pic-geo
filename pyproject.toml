@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pic-geo"
-version = "1.0.1"
+version = "1.1.0"
 description = "The county footprints and ZIP-to-county crosswalk the Polymer Industry Cluster measures against"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -56,6 +56,7 @@ packages = ["src/pic_geo"]
 # without knowing anything about the source layout. One file on disk, two ways in.
 [tool.hatch.build.targets.wheel.force-include]
 "data/pic12_geo.json" = "pic_geo/data/pic12_geo.json"
+"data/pic18_geo.json" = "pic_geo/data/pic18_geo.json"
 
 [tool.hatch.build.targets.sdist]
 include = ["src", "data", "tests", "README.md", "CORRECTIONS.md", "CITATION.cff",

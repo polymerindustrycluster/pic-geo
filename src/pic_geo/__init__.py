@@ -1,6 +1,14 @@
-"""The two Northeast Ohio county footprints the Polymer Industry Cluster measures against.
+"""The Northeast Ohio county footprints the Polymer Industry Cluster measures against.
 
-DECISION (2026-08-14). Analyses built on FEDERAL data use PIC-12, so their figures reconcile
+DECISION (2026-11-03, owner ruling). PIC-18 replaces PIC-12 as the footprint for analyses
+built on federal data. PIC-18 is the NEO-SMART 18-county region, which is the union of the two
+JobsOhio network regions that cover Northeast Ohio: Team NEO (14 counties) and Lake to River
+(4 counties), per jobsohio.com/ohio-regional-network, read 2026-11-03. The NEO-SMART map shades
+the same 18. PIC-12 stays defined, unchanged, so analyses published against it remain
+reproducible; new federal-data work uses PIC-18. NEO-14 is unchanged. PIC-18 contains all of
+PIC-12; it does not contain NEO-14, which alone holds Crawford.
+
+DECISION (2026-08-14, superseded for new work on 2026-11-03). Analyses built on FEDERAL data use PIC-12, so their figures reconcile
 with the cluster-health dashboard. Analyses built on the PIC company vault stay on NEO-14,
 because that is how company records are tagged. Every published page states which one it used.
 
@@ -16,9 +24,10 @@ it drops Ashtabula and Trumbull, which are unambiguously northeast Ohio, and it 
 Crawford (Bucyrus) and Richland (Mansfield), which are north-central Ohio some 60 to 90 miles
 from Cleveland. Read the lists, not the label.
 
-NEITHER FOOTPRINT IS A CENSUS-DEFINED REGION. PIC-12 is not the Cleveland-Akron-Canton CSA,
+NEITHER PIC-12 NOR NEO-14 IS A CENSUS-DEFINED REGION. PIC-12 is not the Cleveland-Akron-Canton CSA,
 not a union of metropolitan statistical areas, and not a JobsOhio or ODOT region. Carroll
-County (39019), for instance, sits in the Canton-Massillon MSA and in neither footprint.
+County (39019), for instance, sits in the Canton-Massillon MSA and in none of the three
+footprints. PIC-18, by contrast, IS a public geography: the two JobsOhio regions named above.
 Substituting a standard Census geography "for convenience" produces numbers that silently
 fail to reconcile with everything published against these definitions.
 
@@ -39,6 +48,17 @@ PIC12 = {
     "39093": "Lorain", "39099": "Mahoning", "39103": "Medina", "39133": "Portage",
     "39151": "Stark", "39153": "Summit", "39155": "Trumbull", "39169": "Wayne",
 }
+# PIC-18, by ascending FIPS. Team NEO (14) and Lake to River (4); see JOBSOHIO_REGION.
+PIC18 = {
+    "39005": "Ashland", "39007": "Ashtabula", "39029": "Columbiana", "39035": "Cuyahoga",
+    "39043": "Erie", "39055": "Geauga", "39077": "Huron", "39085": "Lake",
+    "39093": "Lorain", "39099": "Mahoning", "39103": "Medina", "39133": "Portage",
+    "39139": "Richland", "39151": "Stark", "39153": "Summit", "39155": "Trumbull",
+    "39157": "Tuscarawas", "39169": "Wayne",
+}
+#: Which JobsOhio network region each PIC-18 county belongs to (the public source of PIC-18).
+JOBSOHIO_REGION = {f: ("Lake to River" if n in ("Ashtabula", "Columbiana", "Mahoning", "Trumbull")
+                       else "Team NEO") for f, n in PIC18.items()}
 NEO14 = {
     "39153": "Summit", "39035": "Cuyahoga", "39133": "Portage", "39151": "Stark",
     "39055": "Geauga", "39085": "Lake", "39093": "Lorain", "39103": "Medina",
@@ -53,6 +73,8 @@ SHARED = set(PIC12) & set(NEO14)
 # change had to be made in three places and only one of them would fail if it was missed.
 PIC12_ONLY = {f: PIC12[f] for f in PIC12 if f not in NEO14}
 NEO14_ONLY = {f: NEO14[f] for f in NEO14 if f not in PIC12}
+#: The six counties PIC-18 adds to PIC-12 (PIC-12 is a subset of PIC-18).
+PIC18_ADDED_TO_PIC12 = {f: PIC18[f] for f in PIC18 if f not in PIC12}
 
 # The serialization contract. These blocks are embedded verbatim into every published dataset
 # so a reader can tell which footprint produced the numbers in front of them. `key` and
@@ -78,11 +100,20 @@ META = {
                       "for vault-sourced pages because company records carry this flag.",
               "differs": "Excludes Ashtabula and Trumbull, which PIC-12 includes, and adds "
                          "Crawford, Huron, Richland and Tuscarawas. The two share ten counties."},
+    "pic18": {"key": "pic18", "n": len(PIC18), "label": "PIC-18",
+              "counties": sorted(PIC18.values()),
+              "note": "PIC’s 18-county footprint from 2026-11-03: the NEO-SMART region, equal to "
+                      "the JobsOhio Team NEO (14) and Lake to River (4) regions. Used for "
+                      "federal-data pages from that date.",
+              "differs": "Adds Ashland, Columbiana, Erie, Huron, Richland and Tuscarawas to "
+                         "PIC-12, which it contains. Against the vault’s NEO-14 it adds "
+                         "Ashland, Ashtabula, Columbiana, Erie and Trumbull and leaves out "
+                         "Crawford; the two share thirteen counties."},
     "shared": sorted(PIC12[c] for c in SHARED),
 }
 
 #: The two real footprint keys, for safe iteration over META. "shared" is not a footprint.
-FOOTPRINTS = ("pic12", "neo14")
+FOOTPRINTS = ("pic12", "neo14", "pic18")
 
 # Derived shapes. Consuming scripts need county identifiers in several forms — three-digit
 # FIPS for the Census API, upper-case names for EPA extracts, title-case names for IPEDS.
@@ -94,16 +125,22 @@ PIC12_FIPS3 = {f[2:]: n for f, n in PIC12.items()}               # {"007": "Asht
 PIC12_NAMES = frozenset(PIC12.values())                          # {"Ashtabula", ...}
 PIC12_NAMES_UPPER = frozenset(n.upper() for n in PIC12.values())  # {"ASHTABULA", ...}
 
+PIC18_FIPS = frozenset(PIC18)
+PIC18_FIPS3 = {f[2:]: n for f, n in PIC18.items()}
+PIC18_NAMES = frozenset(PIC18.values())
+PIC18_NAMES_UPPER = frozenset(n.upper() for n in PIC18.values())
+
 NEO14_FIPS = frozenset(NEO14)
 NEO14_FIPS3 = {f[2:]: n for f, n in NEO14.items()}
 NEO14_NAMES = frozenset(NEO14.values())
 NEO14_NAMES_UPPER = frozenset(n.upper() for n in NEO14.values())
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 __all__ = [
-    "PIC12", "NEO14", "SHARED", "META", "FOOTPRINTS",
-    "PIC12_ONLY", "NEO14_ONLY",
+    "PIC12", "NEO14", "PIC18", "JOBSOHIO_REGION", "SHARED", "META", "FOOTPRINTS",
+    "PIC12_ONLY", "NEO14_ONLY", "PIC18_ADDED_TO_PIC12",
+    "PIC18_FIPS", "PIC18_FIPS3", "PIC18_NAMES", "PIC18_NAMES_UPPER",
     "PIC12_FIPS", "PIC12_FIPS3", "PIC12_NAMES", "PIC12_NAMES_UPPER",
     "NEO14_FIPS", "NEO14_FIPS3", "NEO14_NAMES", "NEO14_NAMES_UPPER",
     "counties", "footprint", "in_footprint",
@@ -115,7 +152,7 @@ __all__ = [
 def counties(key="pic12"):
     """Return the {FIPS: county name} mapping for one footprint.
 
-    Takes "pic12" or "neo14". Refuses anything else rather than returning an empty dict,
+    Takes "pic12", "neo14" or "pic18". Refuses anything else rather than returning an empty dict,
     because a silent empty footprint filters every row out and reads downstream as "the
     region has no data" instead of as an error.
     """
@@ -123,6 +160,8 @@ def counties(key="pic12"):
         return dict(PIC12)
     if key == "neo14":
         return dict(NEO14)
+    if key == "pic18":
+        return dict(PIC18)
     raise KeyError(f"unknown footprint {key!r}; expected one of {FOOTPRINTS}")
 
 
