@@ -52,6 +52,17 @@ pic_geo.footprint("pic18")                  # the metadata block to stamp on out
 pic_geo.county_of_zip("44663", key="pic18") # "Tuscarawas"
 ```
 
+**Team NEO-14** (v1.2.0) is the Team NEO half of PIC-18: its 14 counties, with the four Lake to
+River counties left out. Team NEO's [Vibrant Economy Indicators](https://neohioeconomy.org/about)
+report on this region, so a PIC-18 analysis can print a Team NEO-14 subtotal for comparison.
+It is **not** the vault's NEO-14. The two share twelve counties: Team NEO-14 alone holds
+Ashland and Erie, and NEO-14 alone holds Crawford and Mahoning.
+
+```python
+pic_geo.TEAMNEO14                           # 14 counties, a subset of PIC18
+pic_geo.footprint("teamneo14")["label"]     # "Team NEO-14"
+```
+
 **The PIC-18 crosswalk ships ZIP-only in v1.1.0.**
 - **Coverage:** 336 ZCTAs, built by the same largest-land-piece rule. Every PIC-12 ZIP keeps its county.
 - **Why there is no city list yet:** the city half is built from the EPA facility extract, which is not
