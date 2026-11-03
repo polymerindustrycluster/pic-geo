@@ -26,6 +26,38 @@ pip install "pic-geo @ git+https://github.com/polymerindustrycluster/pic-geo@v1.
 
 Until a tag you need exists, `@main` works and is not citable.
 
+## PIC-18: the footprint for federal-data work from 2026-11-03
+
+**PIC-18** (18 counties, v1.1.0) is the NEO-SMART Northeast Ohio region. It is the union of the two
+JobsOhio network regions that cover it, per [jobsohio.com/ohio-regional-network](https://www.jobsohio.com/ohio-regional-network),
+read 2026-11-03:
+- **Team NEO (14):** Ashland, Cuyahoga, Erie, Geauga, Huron, Lake, Lorain, Medina, Portage, Richland,
+  Stark, Summit, Tuscarawas, Wayne.
+- **Lake to River (4):** Ashtabula, Columbiana, Mahoning, Trumbull.
+
+The owner ruled on 2026-11-03 that federal-data analyses move from PIC-12 to PIC-18.
+
+- **PIC-12 contains no county outside PIC-18.** PIC-18 adds Ashland, Columbiana, Erie, Huron, Richland
+  and Tuscarawas. That still does not make PIC-12 and PIC-18 figures comparable: a PIC-18 total is not a
+  PIC-12 total plus a remainder anyone published.
+- **PIC-12 stays defined, unchanged,** so everything already published against it stays reproducible.
+- **NEO-14 is unchanged.** PIC-18 and NEO-14 share thirteen counties. NEO-14 alone holds Crawford.
+- **Unlike PIC-12 and NEO-14, PIC-18 is a public geography.** It can be checked from outside PIC
+  against JobsOhio's page.
+
+```python
+pic_geo.PIC18                               # 18 counties, by FIPS
+pic_geo.JOBSOHIO_REGION["39157"]            # "Team NEO" (Tuscarawas)
+pic_geo.footprint("pic18")                  # the metadata block to stamp on output
+pic_geo.county_of_zip("44663", key="pic18") # "Tuscarawas"
+```
+
+**The PIC-18 crosswalk ships ZIP-only in v1.1.0.**
+- **Coverage:** 336 ZCTAs, built by the same largest-land-piece rule. Every PIC-12 ZIP keeps its county.
+- **Why there is no city list yet:** the city half is built from the EPA facility extract, which is not
+  ours to republish. `county_of_city(..., key="pic18")` raises until someone rebuilds it with that
+  extract, so a city-only source cannot silently read as "no activity" in the six added counties.
+
 ## Two footprints, and they never reconcile
 
 PIC carries two county definitions, for a reason that is historical and is not going away:

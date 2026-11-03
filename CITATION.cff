@@ -15,8 +15,10 @@ authors:
     website: "https://picinnovation.org"
 repository-code: "https://github.com/polymerindustrycluster/pic-geo"
 abstract: >-
-  The two Northeast Ohio county footprints the Polymer Industry Cluster measures against —
-  PIC-12, used for federal-data analyses, and NEO-14, used for company-vault analyses — as
+  The Northeast Ohio county footprints the Polymer Industry Cluster measures against —
+  PIC-18 (the NEO-SMART region: JobsOhio Team NEO plus Lake to River), used for federal-data
+  analyses from 2026-11-03; PIC-12, the earlier federal-data set, kept for reproducibility;
+  and NEO-14, used for company-vault analyses — as
   code, with their FIPS codes, the ten counties they share, and the six that belong to only
   one of them. Ships an authoritative ZIP-to-county crosswalk for the PIC-12 footprint, 261
   ZCTAs and 614 observed city names, derived from the U.S. Census Bureau 2020

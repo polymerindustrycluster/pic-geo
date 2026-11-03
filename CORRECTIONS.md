@@ -14,6 +14,25 @@ Newest first. Report an error by opening an issue — see
 
 ---
 
+## 2026-11-03 — PIC-18 added; federal-data work moves to it, v1.1.0
+
+**Was:** two footprints. PIC-12 was the official set for federal-data analyses; NEO-14 was for
+vault-sourced analyses.
+
+**Is:** a third footprint, **PIC-18**, by owner ruling 2026-11-03. It is the NEO-SMART region, equal to
+the JobsOhio Team NEO (14) and Lake to River (4) regions. It replaces PIC-12 for federal-data work
+from this date.
+- PIC-12 and NEO-14 are unchanged. No existing value in this repository changed.
+- New: `PIC18`, `JOBSOHIO_REGION`, `PIC18_ADDED_TO_PIC12`, the `PIC18_*` shapes, `META["pic18"]`,
+  `"pic18"` in `FOOTPRINTS`, and a ZIP-only PIC-18 crosswalk, `data/pic18_geo.json`.
+- The crosswalk functions take an optional `key=`. The default stays `"pic12"`, so existing callers
+  get exactly what they got before.
+
+**Why it is listed here:** consumers that iterate `FOOTPRINTS` or `META` now see a third entry.
+Iterating `META` was already unsafe because of `"shared"`; use `FOOTPRINTS` and `footprint()`.
+
+**Cause:** an owner decision to align PIC reporting with NEO-SMART and the JobsOhio regional split.
+
 ## 2026-10-04 — PIC-12's difference sentence named only half the difference, v1.0.1
 
 **Was:** `META["pic12"]["differs"]` read "Excludes Crawford, Huron, Richland and Tuscarawas,

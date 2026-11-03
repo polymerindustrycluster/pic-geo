@@ -200,7 +200,7 @@ def test_meta_prose_states_both_directions_of_the_difference():
     """
     both = set(pic_geo.PIC12_ONLY.values()) | set(pic_geo.NEO14_ONLY.values())
     shared_words = {10: "ten"}[len(pic_geo.SHARED)]
-    for key in pic_geo.FOOTPRINTS:
+    for key in ("pic12", "neo14"):  # PIC-18's sentence is about PIC-18; tested separately below
         prose = pic_geo.META[key]["differs"]
         for name in both:
             assert name in prose, f"{key} differs omits {name}"
@@ -221,7 +221,8 @@ def test_meta_serialization_contract_is_intact():
     # "shared" is a bare list, not a footprint block. That asymmetry is load-bearing for
     # already-published output, so it is pinned rather than quietly fixed.
     assert isinstance(pic_geo.META["shared"], list)
-    assert set(pic_geo.META) == {"pic12", "neo14", "shared"}
+    assert pic_geo.META["pic18"]["label"] == "PIC-18"
+    assert set(pic_geo.META) == {"pic12", "neo14", "pic18", "shared"}
 
 
 def test_footprint_accessors_refuse_bad_keys():
@@ -409,4 +410,81 @@ def test_vendored_copy_in_evidence_room_has_not_drifted():
     assert vendored.PIC12 == pic_geo.PIC12, "evidence-room's PIC12 has drifted from pic-geo"
     assert vendored.NEO14 == pic_geo.NEO14, "evidence-room's NEO14 has drifted from pic-geo"
     assert vendored.SHARED == pic_geo.SHARED
+    assert vendored.PIC18 == pic_geo.PIC18, "evidence-room's PIC18 has drifted from pic-geo"
     assert vendored.META == pic_geo.META, "evidence-room's META has drifted from pic-geo"
+
+
+# ---------------------------------------------------------------------------------------
+# PIC-18 (v1.1.0, owner ruling 2026-11-03)
+# ---------------------------------------------------------------------------------------
+
+TEAM_NEO = {"Ashland", "Cuyahoga", "Erie", "Geauga", "Huron", "Lake", "Lorain", "Medina", "Portage",
+            "Richland", "Stark", "Summit", "Tuscarawas", "Wayne"}
+LAKE_TO_RIVER = {"Ashtabula", "Columbiana", "Mahoning", "Trumbull"}
+
+
+def test_pic18_is_exactly_the_two_jobsohio_regions():
+    """PIC-18's public definition: JobsOhio Team NEO (14) plus Lake to River (4), read from
+    jobsohio.com/ohio-regional-network on 2026-11-03. Retyped here as names, so a FIPS typo in
+    the module cannot pass by agreeing with itself."""
+    assert set(pic_geo.PIC18.values()) == TEAM_NEO | LAKE_TO_RIVER
+    assert len(pic_geo.PIC18) == 18 and pic_geo.META["pic18"]["n"] == 18
+    assert {pic_geo.PIC18[f] for f, r in pic_geo.JOBSOHIO_REGION.items() if r == "Team NEO"} == TEAM_NEO
+    assert {pic_geo.PIC18[f] for f, r in pic_geo.JOBSOHIO_REGION.items() if r == "Lake to River"} == LAKE_TO_RIVER
+    assert set(pic_geo.JOBSOHIO_REGION) == set(pic_geo.PIC18)
+
+
+def test_pic18_contains_pic12_and_names_what_it_adds():
+    assert set(pic_geo.PIC12) < set(pic_geo.PIC18), "PIC-18 must contain PIC-12"
+    added = {"Ashland", "Columbiana", "Erie", "Huron", "Richland", "Tuscarawas"}
+    assert set(pic_geo.PIC18_ADDED_TO_PIC12.values()) == added
+    prose = pic_geo.META["pic18"]["differs"]
+    for name in added:
+        assert name in prose
+    # against NEO-14: names what PIC-18 adds and what it leaves out, and the shared count
+    neo = set(pic_geo.NEO14.values())
+    for name in set(pic_geo.PIC18.values()) - neo:
+        assert name in prose, f"pic18 differs omits {name}"
+    for name in neo - set(pic_geo.PIC18.values()):
+        assert name in prose, f"pic18 differs omits {name}"
+    assert len(set(pic_geo.PIC18) & set(pic_geo.NEO14)) == 13
+    assert "share thirteen counties" in prose
+
+
+def test_pic18_is_sorted_by_fips_and_shapes_agree():
+    assert list(pic_geo.PIC18) == sorted(pic_geo.PIC18)
+    assert pic_geo.PIC18_FIPS == frozenset(pic_geo.PIC18)
+    assert len(pic_geo.PIC18_FIPS3) == 18 and pic_geo.PIC18_FIPS3["005"] == "Ashland"
+    assert pic_geo.PIC18_NAMES_UPPER == frozenset(n.upper() for n in pic_geo.PIC18.values())
+    assert pic_geo.in_footprint("39157", "pic18") is True     # Tuscarawas
+    assert pic_geo.in_footprint("39033", "pic18") is False    # Crawford: NEO-14 only
+    assert pic_geo.in_footprint("39019", "pic18") is False    # Carroll: in none of the three
+
+
+def test_module_docstring_records_the_pic18_decision():
+    assert "DECISION (2026-11-03" in pic_geo.__doc__
+    assert "Team NEO" in pic_geo.__doc__ and "Lake to River" in pic_geo.__doc__
+
+
+def test_pic18_zip_crosswalk_is_consistent_with_pic12():
+    """The PIC-18 crosswalk (v1.1.0, ZIP-only) is built by the same largest-land-piece rule, so
+    every PIC-12 ZIP must appear in it with the same county, and every PIC-18 county is covered."""
+    p12, p18 = crosswalk.zips("pic12"), crosswalk.zips("pic18")
+    assert len(p18) > len(p12)
+    for z, county in p12.items():
+        assert p18.get(z) == county, f"ZIP {z}: PIC-12 says {county}, PIC-18 says {p18.get(z)}"
+    assert set(p18.values()) == set(pic_geo.PIC18.values())
+    assert crosswalk.load_geo("pic18")["meta"]["footprint"] == "pic18"
+    assert crosswalk.county_of_zip("44663", key="pic18") == "Tuscarawas"   # New Philadelphia
+    assert crosswalk.county_of_zip("44663") is None                        # not in PIC-12
+
+
+def test_pic18_city_lookup_refuses_until_rebuilt():
+    """PIC-18 ships ZIP-only. A city lookup must fail loudly, not return None for every town,
+    which would read as 'no activity in the six added counties'."""
+    assert crosswalk.cities("pic18") == {}
+    with pytest.raises(LookupError):
+        crosswalk.county_of_city("NEW PHILADELPHIA", key="pic18")
+    with pytest.raises(KeyError):
+        crosswalk.load_geo("neo14")
+

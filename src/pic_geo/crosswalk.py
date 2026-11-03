@@ -79,46 +79,51 @@ REL_URL = ("https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/"
            "tab20_zcta520_county20_natl.txt")
 
 _HERE = Path(__file__).resolve().parent
-_GEO = None  # loaded once, on first use
+_GEO = {}  # footprint key -> crosswalk, loaded once each, on first use
+# v1.1.0: one crosswalk file per footprint that has one. PIC-18's ships ZIP-only: its city
+# half needs the EPA facility extract, which is not ours to republish (see build()).
+_FILES = {"pic12": "pic12_geo.json", "pic18": "pic18_geo.json"}
 
 
-def geo_path():
-    """Where `pic12_geo.json` is on this installation.
+def geo_path(key="pic12"):
+    """Where a footprint's crosswalk file (`pic12_geo.json`, `pic18_geo.json`) is on this installation.
 
     An installed wheel carries it as package data; a source checkout has it at `data/` in the
     repository root. Both are checked rather than assuming which kind of tree this is.
     """
-    packaged = _HERE / "data" / "pic12_geo.json"
+    if key not in _FILES:
+        raise KeyError(f"no crosswalk for footprint {key!r}; crosswalks exist for {tuple(_FILES)}")
+    name = _FILES[key]
+    packaged = _HERE / "data" / name
     if packaged.exists():
         return packaged
-    checkout = _HERE.parents[1] / "data" / "pic12_geo.json"
+    checkout = _HERE.parents[1] / "data" / name
     if checkout.exists():
         return checkout
     raise FileNotFoundError(
-        "pic12_geo.json not found next to the package or at <repo>/data/. It is the shipped "
+        f"{name} not found next to the package or at <repo>/data/. It is the shipped "
         "product of this repository; a missing copy means a broken install, not a build step."
     )
 
 
-def load_geo():
-    """Load and cache the full crosswalk file: meta, zips, cities, rejected_cities."""
-    global _GEO
-    if _GEO is None:
-        with open(geo_path(), encoding="utf-8") as fh:
-            _GEO = json.load(fh)
-    return _GEO
+def load_geo(key="pic12"):
+    """Load and cache one footprint's crosswalk file: meta, zips, cities, rejected_cities."""
+    if key not in _GEO:
+        with open(geo_path(key), encoding="utf-8") as fh:
+            _GEO[key] = json.load(fh)
+    return _GEO[key]
 
 
-def zips():
+def zips(key="pic12"):
     """{5-digit ZIP string: county name} for the 261 PIC-12 ZCTAs. Values are NAMES, not FIPS.
 
     A county name maps back to a FIPS code through `pic_geo.PIC12`. The authoritative
     direction is ZIP to county; do not read a name here as a jurisdiction boundary.
     """
-    return load_geo()["zips"]
+    return load_geo(key)["zips"]
 
 
-def cities():
+def cities(key="pic12"):
     """{UPPER-CASE city string: county name} for city-only sources. Read the caveats first.
 
     A key is a city string exactly as it was observed in the source facility records, so the
@@ -127,19 +132,19 @@ def cities():
     county among that name's in-footprint observations, so for a name spanning two PIC-12
     counties it is a best guess and can be wrong for an individual record.
     """
-    return load_geo()["cities"]
+    return load_geo(key)["cities"]
 
 
-def county_of_zip(code, default=None):
+def county_of_zip(code, default=None, key="pic12"):
     """County name for a 5-digit ZIP, or `default` if it is not in the PIC-12 footprint.
 
     Takes the first five characters, so ZIP+4 works. A miss means "no PIC-12 ZCTA", which is
     not the same as "not in Northeast Ohio" — see the PO-box note in the module docstring.
     """
-    return zips().get(str(code).strip()[:5], default)
+    return zips(key).get(str(code).strip()[:5], default)
 
 
-def county_of_city(name, default=None):
+def county_of_city(name, default=None, key="pic12"):
     """County name for a city string, or `default`. Case-insensitive. Use ZIPs if you have them.
 
     City matching exists for sources that carry no ZIP at all. A city is a postal name, and
@@ -147,17 +152,20 @@ def county_of_city(name, default=None):
     regulated facility has no entry and will read as outside the footprint. That is a
     one-directional undercount, and it is why this is the fallback and not the default.
     """
-    return cities().get(str(name).strip().upper(), default)
+    if key == "pic18" and not cities(key):
+        raise LookupError("the PIC-18 crosswalk ships ZIP-only (v1.1.0): no city list until it is "
+                          "rebuilt with the EPA facility extract. Match on ZIP, or use key='pic12'.")
+    return cities(key).get(str(name).strip().upper(), default)
 
 
-def rejected_cities():
+def rejected_cities(key="pic12"):
     """{city string: why it was rejected} — a diagnostic ledger, NOT a blocklist to reuse.
 
     Several entries are real PIC-12 places rejected by the ZCTA-boundary artifact described in
     the module docstring: Vermilion, Minerva and Fredericksburg among them. Reusing this as an
     exclusion list would bake that artifact into a second analysis.
     """
-    return load_geo()["rejected_cities"]
+    return load_geo(key)["rejected_cities"]
 
 
 # ---------------------------------------------------------------------------------------
@@ -186,14 +194,15 @@ def fetch_relationship_file(cache_path, force=False):
     return cache_path
 
 
-def build_zips(cache_path):
+def build_zips(cache_path, key="pic12"):
     """{ZIP: county name} for PIC-12, from the cached relationship file.
 
     One row per ZCTA-county piece. Each ZCTA is kept against the county holding its largest
     `AREALAND_PART`; see the straddle discussion in the module docstring for why one county
     and not all of them.
     """
-    from . import PIC12  # imported here so this module has no import-time dependency on it
+    from . import counties  # imported here so this module has no import-time dependency on it
+    PIC12 = counties(key)  # the footprint being built; the name is historical
 
     best = {}  # zcta -> (county fips, land area of that piece)
     with open(cache_path, encoding="utf-8-sig", errors="replace") as fh:
@@ -218,7 +227,7 @@ def build_zips(cache_path):
                 best[zcta] = (county, area)
 
     out = {z: PIC12[c] for z, (c, _) in best.items() if c in PIC12}
-    if len(out) < 150:
+    if len(out) < 150 * len(PIC12) // 12:
         raise SystemExit(f"FATAL: only {len(out)} PIC-12 ZCTAs. Expected 261; the relationship "
                          f"file's columns or the county FIPS set is wrong.")
     return dict(sorted(out.items()))
@@ -259,7 +268,7 @@ def build_cities(zip_lookup, facility_rows, threshold=0.5):
     return dict(sorted(admitted.items())), dict(sorted(rejected.items()))
 
 
-def build(out_path=None, cache_path=None, facilities_path=None, force_fetch=False):
+def build(out_path=None, cache_path=None, facilities_path=None, force_fetch=False, key="pic12"):
     """Regenerate pic12_geo.json. Returns the dict it wrote.
 
     `facilities_path` is a JSON file with an "frs" list of facility records, used only for the
@@ -269,16 +278,18 @@ def build(out_path=None, cache_path=None, facilities_path=None, force_fetch=Fals
     list makes every downstream city match miss, which reads as "no activity in the region"
     instead of as a broken build. Pass `facilities_path=False` to accept that explicitly.
     """
-    from . import PIC12
+    from . import counties
+    PIC12 = counties(key)  # the footprint being built; the name is historical
+    shipped = _HERE.parents[1] / "data" / _FILES[key]
 
-    out_path = Path(out_path) if out_path else geo_path()
+    out_path = Path(out_path) if out_path else shipped
     cache_path = Path(cache_path) if cache_path else out_path.parent / "_zcta_county.txt"
 
     fetch_relationship_file(cache_path, force=force_fetch)
-    zip_lookup = build_zips(cache_path)
+    zip_lookup = build_zips(cache_path, key)
 
     if facilities_path is False:
-        if out_path == geo_path():
+        if key == "pic12" and out_path == shipped:
             raise SystemExit(
                 "FATAL: refusing to overwrite the shipped crosswalk with an empty city list. "
                 "A ZIP-only rebuild is a legitimate thing to want — pass out_path to put it "
@@ -321,6 +332,7 @@ def build(out_path=None, cache_path=None, facilities_path=None, force_fetch=Fals
                         "applications where this crosswalk produces 2,872, and 296 of those "
                         "3,147 (9.4%) carried at least one inventor matched only by a city "
                         "name this crosswalk rejects.",
+            "footprint": key,
             "counties": dict(PIC12),
             "n_zips": len(zip_lookup),
             "n_cities": len(city_lookup),
